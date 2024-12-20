@@ -13,7 +13,7 @@ npm install react-native-photo-slider
 
 
 ```js
-import ImageSlider from 'react-native-photo-slider';
+import ImageSlider from '@herberthtk/react-native-photo-slider';
 
 const images = [
   'Image url 1',
