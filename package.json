@@ -37,7 +37,7 @@
     "!**/.*"
   ],
   "scripts": {
-    "example": "yarn workspace react-native-photo-slider-example",
+    "example": "pnpm workspace react-native-photo-slider-example",
     "test": "jest",
     "typecheck": "tsc",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
@@ -66,9 +66,11 @@
   "devDependencies": {
     "@commitlint/config-conventional": "^17.0.2",
     "@evilmartians/lefthook": "^1.5.0",
+    "@react-native-community/cli": "15.0.0",
     "@react-native/eslint-config": "^0.73.1",
     "@release-it/conventional-changelog": "^9.0.2",
     "@types/jest": "^29.5.5",
+    "@types/node": "^22.10.2",
     "@types/react": "^18.2.44",
     "commitlint": "^17.0.2",
     "del-cli": "^5.1.0",
@@ -88,12 +90,12 @@
   },
   "peerDependencies": {
     "react": "*",
-    "react-native": "*"
+    "react-native": "*",
+    "react-native-reanimated": "*"
   },
   "workspaces": [
     "example"
   ],
-  "packageManager": "yarn@3.6.1",
   "jest": {
     "preset": "react-native",
     "modulePathIgnorePatterns": [

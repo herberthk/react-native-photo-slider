@@ -1,6 +1,6 @@
 # react-native-photo-slider
 
-Modern react-native image slider component for react-native
+Modern image slider component for react-native
 
 ## Installation
 
@@ -12,11 +12,17 @@ npm install react-native-photo-slider
 
 
 ```js
-import { multiply } from 'react-native-photo-slider';
+import ImageSlider from 'react-native-photo-slider';
 
-// ...
+const images = [
+  'Image url 1',
+  'Image url 2'
+  'Image url 3'
+]
 
-const result = await multiply(3, 7);
+export default function App() {
+  return <ImageSlider images={images} />;
+}
 ```
 
 
@@ -30,4 +36,4 @@ MIT
 
 ---
 
-Made with [create-react-native-library](https://github.com/callstack/react-native-builder-bob)
+Made with [Herbert Kavuma](https://herbert.netbritz.com/)
