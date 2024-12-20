@@ -1,3 +1,4 @@
+![Build Status](https://github.com/herberthk/react-native-photo-slider/actions/workflows/ci.yml/badge.svg)[![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)![Supports Android](https://img.shields.io/badge/Supports-Android-green.svg)![Supports iOS](https://img.shields.io/badge/Supports-iOS-blue.svg)![npm version](https://img.shields.io/npm/v/@herberthtk/react-native-photo-slider.svg)![npm](https://img.shields.io/npm/dw/@herberthtk/react-native-photo-slider)
 # react-native-photo-slider
 
 Modern image slider component for react-native
