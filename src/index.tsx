@@ -32,6 +32,8 @@ type Props = {
   height?: number;
   images: ImageType[];
   autoPlayInterval?: number; // Auto-play interval in milliseconds
+  animationDuration?: number; // Animation duration in milliseconds
+  photoCounterTop?: number;
 };
 
 type SliderProps = {
@@ -176,6 +178,8 @@ const ImageSlider: FC<Props> = ({
   height = 500,
   images,
   autoPlayInterval = 5000,
+  animationDuration = 500,
+  photoCounterTop = 20,
 }) => {
   const scrollX = useSharedValue(0);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -204,7 +208,7 @@ const ImageSlider: FC<Props> = ({
     if (autoPlay === true) {
       interval.current = setInterval(() => {
         offset.value = withTiming(offset.value + width, {
-          duration: 3000,
+          duration: animationDuration,
           easing: Easing.linear,
           reduceMotion: ReduceMotion.System,
         });
@@ -216,7 +220,14 @@ const ImageSlider: FC<Props> = ({
     return () => {
       clearInterval(interval.current);
     };
-  }, [autoPlay, autoPlayInterval, currentIndex, data.length, offset]);
+  }, [
+    autoPlay,
+    autoPlayInterval,
+    currentIndex,
+    data.length,
+    offset,
+    animationDuration,
+  ]);
 
   useDerivedValue(() => {
     scrollTo(ref, offset.value, 0, true);
@@ -244,8 +255,8 @@ const ImageSlider: FC<Props> = ({
   return (
     <View style={styles.container}>
       {showCounter && (
-        <Text style={styles.count}>
-          {currentIndex + 1}/{images.length}
+        <Text style={[styles.count, { top: photoCounterTop }]}>
+          {currentIndex + 1}/{data.length}
         </Text>
       )}
 
@@ -300,7 +311,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     color: '#fff',
     fontWeight: 'bold',
-    top: 20,
     right: 20,
     zIndex: 1000,
   },
