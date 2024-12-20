@@ -76,7 +76,7 @@ const SliderItem: FC<SliderProps> = ({
       Extrapolation.CLAMP
     );
     return {
-      transform: [{ translateX }, { scale }],
+      transform: [{ translateX }, { scale }, { perspective: 500 }],
     };
   });
 
@@ -187,21 +187,18 @@ const ImageSlider: FC<Props> = ({
   const [autoPlay, setAutoPlay] = useState(true);
   const interval = useRef<NodeJS.Timeout>();
   const offset = useSharedValue(0);
-  const [data, setData] = useState(images);
+  // Create a duplicated array for seamless infinite scroll
+  const duplicatedImages = [...images, ...images];
 
   // / Scroll handler to update translateX
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
       scrollX.value = event.contentOffset.x;
     },
-    onMomentumEnd: (e) => {
-      offset.value = e.contentOffset.x;
-    },
+    // onMomentumEnd: (e) => {
+    //   offset.value = e.contentOffset.x;
+    // },
   });
-
-  useEffect(() => {
-    setData(images);
-  }, [images]);
 
   // Auto-play effect
   useEffect(() => {
@@ -212,6 +209,15 @@ const ImageSlider: FC<Props> = ({
           easing: Easing.linear,
           reduceMotion: ReduceMotion.System,
         });
+        // Reset to start of original array if at the end
+        if (offset.value >= images.length * width) {
+          offset.value = 0; // Reset offset for seamless circular behavior
+          // setCurrentIndex(0);
+          ref.current?.scrollToOffset({ offset: 0, animated: false });
+        }
+
+        // Update index based on circular array
+        setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
       }, autoPlayInterval);
     } else {
       clearInterval(interval.current);
@@ -221,12 +227,13 @@ const ImageSlider: FC<Props> = ({
       clearInterval(interval.current);
     };
   }, [
+    animationDuration,
     autoPlay,
     autoPlayInterval,
     currentIndex,
-    data.length,
+    images.length,
     offset,
-    animationDuration,
+    ref,
   ]);
 
   useDerivedValue(() => {
@@ -256,13 +263,13 @@ const ImageSlider: FC<Props> = ({
     <View style={styles.container}>
       {showCounter && (
         <Text style={[styles.count, { top: photoCounterTop }]}>
-          {currentIndex + 1}/{data.length}
+          {currentIndex + 1}/{images.length}
         </Text>
       )}
 
       <Animated.FlatList
         ref={ref}
-        data={data}
+        data={duplicatedImages} // Use duplicated array
         keyExtractor={(_, index) => index.toString()}
         horizontal
         pagingEnabled
@@ -282,7 +289,21 @@ const ImageSlider: FC<Props> = ({
           />
         )}
         viewabilityConfigCallbackPairs={viewabilityConfigCallbackPairs.current}
-        onEndReached={() => setData([...data, ...images])}
+        onMomentumScrollEnd={() => {
+          // const offset = e.nativeEvent.contentOffset.x;
+          // const currentIndex = Math.round(offset / width) % images.length;
+          // setCurrentIndex(currentIndex);
+
+          // Adjust scroll position to simulate infinite loop
+          if (currentIndex === images.length - 1) {
+            ref.current?.scrollToOffset({ offset: 0, animated: false });
+          } else if (currentIndex === 0) {
+            ref.current?.scrollToOffset({
+              offset: (images.length - 1) * width,
+              animated: false,
+            });
+          }
+        }}
         onEndReachedThreshold={0.5}
       />
       {showPaginationDots && (
@@ -311,6 +332,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     color: '#fff',
     fontWeight: 'bold',
+    // top:20,
     right: 20,
     zIndex: 1000,
   },
