@@ -2,15 +2,15 @@ import React, { type FC, useEffect, useRef, useState } from 'react';
 import {
   Dimensions,
   Image,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
   StyleSheet,
   Text,
   View,
   type ViewStyle,
-  type ViewToken,
 } from 'react-native';
 import Animated, {
   useSharedValue,
-  useAnimatedScrollHandler,
   useAnimatedStyle,
   interpolate,
   Extrapolation,
@@ -191,14 +191,25 @@ const ImageSlider: FC<Props> = ({
   const duplicatedImages = [...images, ...images];
 
   // / Scroll handler to update translateX
-  const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (event) => {
-      scrollX.value = event.contentOffset.x;
-    },
-    // onMomentumEnd: (e) => {
-    //   offset.value = e.contentOffset.x;
-    // },
-  });
+  // const scrollHandler = useAnimatedScrollHandler({
+  //   onScroll: (event) => {
+  //     scrollX.value = event.contentOffset.x;
+  //     const scrollOffsetX = event.contentOffset.x;
+  //     const i = Math.floor(scrollOffsetX / width);
+  //     setCurrentIndex(i);
+
+  //   },
+  //   // onMomentumEnd: (e) => {
+  //   //   offset.value = e.contentOffset.x;
+  //   // },
+  // });
+
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const scrollOffsetX = event.nativeEvent.contentOffset.x;
+    scrollX.value = scrollOffsetX;
+    const i = Math.floor(scrollOffsetX / width);
+    setCurrentIndex(i);
+  };
 
   // Auto-play effect
   useEffect(() => {
@@ -217,7 +228,7 @@ const ImageSlider: FC<Props> = ({
         }
 
         // Update index based on circular array
-        setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+        // setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
       }, autoPlayInterval);
     } else {
       clearInterval(interval.current);
@@ -240,30 +251,22 @@ const ImageSlider: FC<Props> = ({
     scrollTo(ref, offset.value, 0, true);
   });
 
-  const viewabilityConfig = {
-    itemVisiblePercentThreshold: 50,
-  };
-  const onViewableItemsChanged = ({
-    viewableItems,
-  }: {
-    viewableItems: ViewToken<ImageType>[];
-  }) => {
-    if (
-      viewableItems[0]?.index !== undefined &&
-      viewableItems[0]?.index !== null
-    ) {
-      setCurrentIndex(viewableItems[0].index % images.length);
-    }
-  };
-  const viewabilityConfigCallbackPairs = useRef([
-    { viewabilityConfig, onViewableItemsChanged },
-  ]);
-
+  // const viewabilityConfig = {
+  //   itemVisiblePercentThreshold:50,
+  // };
+  // const onViewableItemsChanged = ({viewableItems}:{viewableItems: ViewToken<ImageType>[]})=>{
+  //   if (viewableItems[0].index !== undefined && viewableItems[0].index !== null) {
+  //     setCurrentIndex(viewableItems[0].index % images.length);
+  //   }
+  // };
+  // const viewabilityConfigCallbackPairs = useRef([{viewabilityConfig,onViewableItemsChanged}]);
+  const indexToDisplay =
+    currentIndex + 1 > images.length ? 1 : currentIndex + 1;
   return (
     <View style={styles.container}>
       {showCounter && (
         <Text style={[styles.count, { top: photoCounterTop }]}>
-          {currentIndex + 1}/{images.length}
+          {indexToDisplay}/{images.length}
         </Text>
       )}
 
@@ -274,7 +277,7 @@ const ImageSlider: FC<Props> = ({
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        onScroll={scrollHandler}
+        onScroll={handleScroll}
         scrollEventThrottle={16}
         onScrollBeginDrag={() => setAutoPlay(false)}
         onScrollEndDrag={() => setAutoPlay(true)}
@@ -288,7 +291,7 @@ const ImageSlider: FC<Props> = ({
             height={height}
           />
         )}
-        viewabilityConfigCallbackPairs={viewabilityConfigCallbackPairs.current}
+        // viewabilityConfigCallbackPairs={viewabilityConfigCallbackPairs.current}
         onMomentumScrollEnd={() => {
           // const offset = e.nativeEvent.contentOffset.x;
           // const currentIndex = Math.round(offset / width) % images.length;
@@ -304,7 +307,7 @@ const ImageSlider: FC<Props> = ({
             });
           }
         }}
-        onEndReachedThreshold={0.5}
+        // onEndReachedThreshold={0.5}
       />
       {showPaginationDots && (
         <Pagination
