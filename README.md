@@ -37,4 +37,4 @@ MIT
 
 ---
 
-Made with [Herbert Kavuma](https://herbert.netbritz.com/)
+Made with :heart: by [Herbert kavuma](https://herbert.netbritz.com/)
