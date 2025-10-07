@@ -326,6 +326,7 @@ const ImageSlider: FC<Props> = ({
   // Auto-play logic
   useEffect(() => {
     if (isAutoPlay && images.length > 1) {
+      //@ts-ignore
       intervalRef.current = setInterval(() => {
         setCurrentIndex((prevIndex) => {
           const nextIndex = (prevIndex + 1) % images.length;
