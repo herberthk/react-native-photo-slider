@@ -1,4 +1,4 @@
-import React, { type FC, useEffect, useRef, useState } from 'react';
+import { type FC, useEffect, useRef, useState } from 'react';
 import {
   Dimensions,
   Image,
@@ -36,7 +36,7 @@ type Props = {
   height?: number;
   images: ImageType[];
   autoPlayInterval?: number;
-  animationDuration?: number;
+  animationDuration?: number; // Duration for scroll animation in milliseconds
   photoCounterTop?: number;
 };
 
@@ -300,7 +300,7 @@ const ImageSlider: FC<Props> = ({
   height = 500,
   images,
   autoPlayInterval = 5000,
-  animationDuration = 500,
+  animationDuration = 400, // Default 400ms for smooth transitions
   photoCounterTop = 20,
 }) => {
   const scrollX = useSharedValue(0);
@@ -383,6 +383,8 @@ const ImageSlider: FC<Props> = ({
           offset: width * index,
           index,
         })}
+        // Apply custom animation duration for scrolling
+        decelerationRate={animationDuration < 300 ? 'fast' : 'normal'}
       />
       {showPaginationDots && (
         <Pagination
