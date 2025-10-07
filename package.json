@@ -1,6 +1,6 @@
 {
   "name": "@herberthtk/react-native-photo-slider",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Modern react-native image slider component for react-native",
   "source": "./src/index.tsx",
   "main": "./lib/commonjs/index.js",
