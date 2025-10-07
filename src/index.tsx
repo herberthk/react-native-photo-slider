@@ -2,37 +2,41 @@ import React, { type FC, useEffect, useRef, useState } from 'react';
 import {
   Dimensions,
   Image,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
   StyleSheet,
   Text,
   View,
   type ViewStyle,
 } from 'react-native';
 import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  interpolate,
   Extrapolation,
+  interpolate,
+  runOnJS,
   type SharedValue,
-  useDerivedValue,
-  scrollTo,
-  useAnimatedRef,
-  withTiming,
-  Easing,
-  ReduceMotion,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
 } from 'react-native-reanimated';
 
 const { width } = Dimensions.get('window');
 type ImageType = string | Buffer;
+type AnimationType =
+  | 'slide'
+  | 'fade'
+  | 'scale'
+  | 'rotate'
+  | 'cube'
+  | 'flip'
+  | 'stack'
+  | 'parallax';
+
 type Props = {
   showPaginationDots?: boolean;
   showCounter?: boolean;
-  animation?: 'slide' | 'fadeIn';
+  animation?: AnimationType;
   height?: number;
   images: ImageType[];
-  autoPlayInterval?: number; // Auto-play interval in milliseconds
-  animationDuration?: number; // Animation duration in milliseconds
+  autoPlayInterval?: number;
+  animationDuration?: number;
   photoCounterTop?: number;
 };
 
@@ -40,17 +44,13 @@ type SliderProps = {
   url: ImageType;
   index: number;
   scrollX: SharedValue<number>;
-  animation?: 'slide' | 'fadeIn';
+  animation?: AnimationType;
   items?: ImageType[];
   height?: number;
 };
 
-// Check image is remote file
 const isRemoteImage = (image: string | Buffer): boolean => {
-  // Convert the image to a string (if it's a Buffer)
   const imagePath = typeof image === 'string' ? image : image?.toString();
-
-  // Check if it starts with "http" or "https"
   return imagePath.startsWith('http://') || imagePath.startsWith('https://');
 };
 
@@ -58,9 +58,10 @@ const SliderItem: FC<SliderProps> = ({
   url,
   scrollX,
   index,
-  animation,
+  animation = 'slide',
   height,
 }) => {
+  // Slide animation - default smooth slide with subtle scale
   const slideStyles = useAnimatedStyle(() => {
     const translateX = interpolate(
       scrollX.value,
@@ -80,11 +81,12 @@ const SliderItem: FC<SliderProps> = ({
     };
   });
 
-  const fadeInStyles = useAnimatedStyle(() => {
+  // Fade animation - simple opacity transition
+  const fadeStyles = useAnimatedStyle(() => {
     const opacity = interpolate(
       scrollX.value,
       [(index - 1) * width, index * width, (index + 1) * width],
-      [0.5, 1, 0.5],
+      [0, 1, 0],
       Extrapolation.CLAMP
     );
     return {
@@ -92,12 +94,164 @@ const SliderItem: FC<SliderProps> = ({
     };
   });
 
-  const animationStyles = animation === 'fadeIn' ? fadeInStyles : slideStyles;
+  // Scale animation - zoom in/out effect
+  const scaleStyles = useAnimatedStyle(() => {
+    const scale = interpolate(
+      scrollX.value,
+      [(index - 1) * width, index * width, (index + 1) * width],
+      [0.5, 1, 0.5],
+      Extrapolation.CLAMP
+    );
+    const opacity = interpolate(
+      scrollX.value,
+      [(index - 1) * width, index * width, (index + 1) * width],
+      [0.3, 1, 0.3],
+      Extrapolation.CLAMP
+    );
+    return {
+      transform: [{ scale }],
+      opacity,
+    };
+  });
+
+  // Rotate animation - 3D rotation effect
+  const rotateStyles = useAnimatedStyle(() => {
+    const rotateY = interpolate(
+      scrollX.value,
+      [(index - 1) * width, index * width, (index + 1) * width],
+      [45, 0, -45],
+      Extrapolation.CLAMP
+    );
+    const opacity = interpolate(
+      scrollX.value,
+      [(index - 1) * width, index * width, (index + 1) * width],
+      [0.5, 1, 0.5],
+      Extrapolation.CLAMP
+    );
+    return {
+      transform: [{ perspective: 1000 }, { rotateY: `${rotateY}deg` }],
+      opacity,
+    };
+  });
+
+  // Cube animation - 3D cube rotation effect
+  const cubeStyles = useAnimatedStyle(() => {
+    const rotateY = interpolate(
+      scrollX.value,
+      [(index - 1) * width, index * width, (index + 1) * width],
+      [90, 0, -90],
+      Extrapolation.CLAMP
+    );
+    const translateX = interpolate(
+      scrollX.value,
+      [(index - 1) * width, index * width, (index + 1) * width],
+      [-width / 2, 0, width / 2],
+      Extrapolation.CLAMP
+    );
+    return {
+      transform: [
+        { perspective: 1200 },
+        { translateX },
+        { rotateY: `${rotateY}deg` },
+      ],
+    };
+  });
+
+  // Flip animation - card flip effect
+  const flipStyles = useAnimatedStyle(() => {
+    const rotateX = interpolate(
+      scrollX.value,
+      [(index - 1) * width, index * width, (index + 1) * width],
+      [60, 0, -60],
+      Extrapolation.CLAMP
+    );
+    const opacity = interpolate(
+      scrollX.value,
+      [(index - 1) * width, index * width, (index + 1) * width],
+      [0.4, 1, 0.4],
+      Extrapolation.CLAMP
+    );
+    return {
+      transform: [{ perspective: 1000 }, { rotateX: `${rotateX}deg` }],
+      opacity,
+    };
+  });
+
+  // Stack animation - cards stacking effect
+  const stackStyles = useAnimatedStyle(() => {
+    const scale = interpolate(
+      scrollX.value,
+      [(index - 1) * width, index * width, (index + 1) * width],
+      [0.85, 1, 0.85],
+      Extrapolation.CLAMP
+    );
+    const translateY = interpolate(
+      scrollX.value,
+      [(index - 1) * width, index * width, (index + 1) * width],
+      [100, 0, 100],
+      Extrapolation.CLAMP
+    );
+    const opacity = interpolate(
+      scrollX.value,
+      [(index - 1) * width, index * width, (index + 1) * width],
+      [0.6, 1, 0.6],
+      Extrapolation.CLAMP
+    );
+    return {
+      transform: [{ scale }, { translateY }],
+      opacity,
+    };
+  });
+
+  // Parallax animation - depth effect
+  const parallaxStyles = useAnimatedStyle(() => {
+    const translateX = interpolate(
+      scrollX.value,
+      [(index - 1) * width, index * width, (index + 1) * width],
+      [-width * 0.5, 0, width * 0.5],
+      Extrapolation.CLAMP
+    );
+    const scale = interpolate(
+      scrollX.value,
+      [(index - 1) * width, index * width, (index + 1) * width],
+      [1.2, 1, 1.2],
+      Extrapolation.CLAMP
+    );
+    return {
+      transform: [{ translateX }, { scale }],
+    };
+  });
+
+  // Select animation style based on prop
+  const getAnimationStyle = () => {
+    switch (animation) {
+      case 'fade':
+        return fadeStyles;
+      case 'scale':
+        return scaleStyles;
+      case 'rotate':
+        return rotateStyles;
+      case 'cube':
+        return cubeStyles;
+      case 'flip':
+        return flipStyles;
+      case 'stack':
+        return stackStyles;
+      case 'parallax':
+        return parallaxStyles;
+      case 'slide':
+      default:
+        return slideStyles;
+    }
+  };
+
+  const animationStyles = getAnimationStyle();
   const uri = isRemoteImage(url)
     ? {
         uri: url,
       }
     : url;
+
   return (
     <Animated.View style={[styles.imageContainer, animationStyles, { height }]}>
       {/* @ts-ignore */}
@@ -107,39 +261,10 @@ const SliderItem: FC<SliderProps> = ({
 };
 
 const Indicators: FC<
-  Omit<
-    SliderProps & { currentIndex: React.SetStateAction<number> },
-    'item' | 'url'
-  >
+  Omit<SliderProps & { currentIndex: number }, 'item' | 'url'>
 > = ({ index, currentIndex }) => {
   const customStyles: ViewStyle = { width: 15, opacity: 1 };
-  // const animatedStyle = useAnimatedStyle(() => {
-  //   const opacity = interpolate(
-  //     scrollX.value,
-  //     [(index - 1) * width, index * width, (index + 1) * width],
-  //     [0.5, 1, 0.5],
-  //     Extrapolation.CLAMP
-  //   );
 
-  //   const scale = interpolate(
-  //     scrollX.value,
-  //     [(index - 1) * width, index * width, (index + 1) * width],
-  //     [0.8, 1.3, 0.8],
-  //     Extrapolation.CLAMP
-  //   );
-  //   const dotWidth = interpolate(
-  //     scrollX.value,
-  //     [(index - 1) * width, index * width, (index + 1) * width],
-  //     [10, 15, 10],
-  //     Extrapolation.CLAMP
-  //   );
-
-  //   return {
-  //     opacity,
-  //     transform: [{ scale }],
-  //     width:dotWidth,
-  //   };
-  // });
   return (
     <Animated.View
       key={index}
@@ -152,10 +277,7 @@ const Indicators: FC<
 };
 
 const Pagination: FC<
-  Omit<
-    SliderProps & { currentIndex: React.SetStateAction<number> },
-    'item' | 'index' | 'url'
-  >
+  Omit<SliderProps & { currentIndex: number }, 'item' | 'index' | 'url'>
 > = ({ items, scrollX, currentIndex }) => {
   return (
     <View style={styles.indicatorContainer}>
@@ -183,104 +305,69 @@ const ImageSlider: FC<Props> = ({
 }) => {
   const scrollX = useSharedValue(0);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const ref = useAnimatedRef<Animated.FlatList<any>>();
-  const [autoPlay, setAutoPlay] = useState(true);
-  const interval = useRef<NodeJS.Timeout>();
-  const offset = useSharedValue(0);
-  // Create a duplicated array for seamless infinite scroll
-  const duplicatedImages = [...images, ...images];
+  const flatListRef = useRef<Animated.FlatList<any>>(null);
+  const [isAutoPlay, setIsAutoPlay] = useState(true);
+  const intervalRef = useRef<NodeJS.Timeout>(null);
 
-  // / Scroll handler to update translateX
-  // const scrollHandler = useAnimatedScrollHandler({
-  //   onScroll: (event) => {
-  //     scrollX.value = event.contentOffset.x;
-  //     const scrollOffsetX = event.contentOffset.x;
-  //     const i = Math.floor(scrollOffsetX / width);
-  //     setCurrentIndex(i);
-
-  //   },
-  //   // onMomentumEnd: (e) => {
-  //   //   offset.value = e.contentOffset.x;
-  //   // },
-  // });
-
-  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const scrollOffsetX = event.nativeEvent.contentOffset.x;
-    scrollX.value = scrollOffsetX;
-    const i = Math.floor(scrollOffsetX / width);
-    setCurrentIndex(i);
+  // Update current index from scroll position
+  const updateIndex = (offsetX: number) => {
+    const index = Math.round(offsetX / width);
+    setCurrentIndex(index % images.length);
   };
 
-  // Auto-play effect
-  useEffect(() => {
-    if (autoPlay === true) {
-      interval.current = setInterval(() => {
-        offset.value = withTiming(offset.value + width, {
-          duration: animationDuration,
-          easing: Easing.linear,
-          reduceMotion: ReduceMotion.System,
-        });
-        // Reset to start of original array if at the end
-        if (offset.value >= images.length * width) {
-          offset.value = 0; // Reset offset for seamless circular behavior
-          // setCurrentIndex(0);
-          ref.current?.scrollToOffset({ offset: 0, animated: false });
-        }
+  // Animated scroll handler for smoother updates
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollX.value = event.contentOffset.x;
+      runOnJS(updateIndex)(event.contentOffset.x);
+    },
+  });
 
-        // Update index based on circular array
-        // setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+  // Auto-play logic
+  useEffect(() => {
+    if (isAutoPlay && images.length > 1) {
+      intervalRef.current = setInterval(() => {
+        setCurrentIndex((prevIndex) => {
+          const nextIndex = (prevIndex + 1) % images.length;
+          flatListRef.current?.scrollToOffset({
+            offset: nextIndex * width,
+            animated: true,
+          });
+          return nextIndex;
+        });
       }, autoPlayInterval);
-    } else {
-      clearInterval(interval.current);
     }
 
     return () => {
-      clearInterval(interval.current);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
     };
-  }, [
-    animationDuration,
-    autoPlay,
-    autoPlayInterval,
-    currentIndex,
-    images.length,
-    offset,
-    ref,
-  ]);
+  }, [isAutoPlay, autoPlayInterval, images.length]);
 
-  useDerivedValue(() => {
-    scrollTo(ref, offset.value, 0, true);
-  });
-
-  // const viewabilityConfig = {
-  //   itemVisiblePercentThreshold:50,
-  // };
-  // const onViewableItemsChanged = ({viewableItems}:{viewableItems: ViewToken<ImageType>[]})=>{
-  //   if (viewableItems[0].index !== undefined && viewableItems[0].index !== null) {
-  //     setCurrentIndex(viewableItems[0].index % images.length);
-  //   }
-  // };
-  // const viewabilityConfigCallbackPairs = useRef([{viewabilityConfig,onViewableItemsChanged}]);
-  const indexToDisplay =
-    currentIndex + 1 > images.length ? 1 : currentIndex + 1;
   return (
     <View style={styles.container}>
       {showCounter && (
         <Text style={[styles.count, { top: photoCounterTop }]}>
-          {indexToDisplay}/{images.length}
+          {currentIndex + 1}/{images.length}
         </Text>
       )}
 
       <Animated.FlatList
-        ref={ref}
-        data={duplicatedImages} // Use duplicated array
-        keyExtractor={(_, index) => index.toString()}
+        ref={flatListRef}
+        data={images}
+        keyExtractor={(_, index) => `image-${index}`}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        onScroll={handleScroll}
+        onScroll={scrollHandler}
         scrollEventThrottle={16}
-        onScrollBeginDrag={() => setAutoPlay(false)}
-        onScrollEndDrag={() => setAutoPlay(true)}
+        onScrollBeginDrag={() => {
+          setIsAutoPlay(false);
+        }}
+        onScrollEndDrag={() => {
+          setIsAutoPlay(true);
+        }}
         renderItem={({ item, index }) => (
           <SliderItem
             key={index}
@@ -291,23 +378,11 @@ const ImageSlider: FC<Props> = ({
             height={height}
           />
         )}
-        // viewabilityConfigCallbackPairs={viewabilityConfigCallbackPairs.current}
-        onMomentumScrollEnd={() => {
-          // const offset = e.nativeEvent.contentOffset.x;
-          // const currentIndex = Math.round(offset / width) % images.length;
-          // setCurrentIndex(currentIndex);
-
-          // Adjust scroll position to simulate infinite loop
-          if (currentIndex === images.length - 1) {
-            ref.current?.scrollToOffset({ offset: 0, animated: false });
-          } else if (currentIndex === 0) {
-            ref.current?.scrollToOffset({
-              offset: (images.length - 1) * width,
-              animated: false,
-            });
-          }
-        }}
-        // onEndReachedThreshold={0.5}
+        getItemLayout={(_, index) => ({
+          length: width,
+          offset: width * index,
+          index,
+        })}
       />
       {showPaginationDots && (
         <Pagination
@@ -335,7 +410,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     color: '#fff',
     fontWeight: 'bold',
-    // top:20,
     right: 20,
     zIndex: 1000,
   },
@@ -346,8 +420,6 @@ const styles = StyleSheet.create({
   },
   indicatorContainer: {
     flexDirection: 'row',
-    //justifyContent: 'center',
-    //alignItems:'center',
     bottom: 10,
     zIndex: 1000,
     position: 'absolute',
